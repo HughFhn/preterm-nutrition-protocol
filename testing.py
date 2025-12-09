@@ -18,16 +18,23 @@ def get_pn_row(table, aqueous_type, dol):
         raise ValueError(f"No matching PN row for {aqueous_type} and DOL {dol_filter}")
     return row.iloc[0]  # Return a single row as Series
  
-# Calculate patient-specific SPN target volumes
+# calculates the spn by protocol
+def calculate_protocol_spn(row):
+    aq = row[('Aqueous SPN Product', 'Target Volume')]
+    lip = row[('Lipid SPN Product', 'Target Volume')]
+    total = (aq[0] + lip[0], aq[1] + lip[1])
+    return aq, lip, total
+
+# calculates the spn with protocol and weight
 def calculate_patient_spn(row, weight):
-    # Extract protocol ranges directly from the row
-    aq_target = row[('Aqueous SPN Product', 'Target Volume')]
-    lipid_target = row[('Lipid SPN Product', 'Target Volume')]
-    
-    # Total SPN range = sum of tuples
-    total_spn = (aq_target[0] + lipid_target[0], aq_target[1] + lipid_target[1])
-    
-    return aq_target, lipid_target, total_spn
+    aq = row[('Aqueous SPN Product', 'Target Volume')]
+    lip = row[('Lipid SPN Product', 'Target Volume')]
+
+    aq_mL = (aq[0] * weight, aq[1] * weight)
+    lip_mL = (lip[0] * weight, lip[1] * weight)
+    total_mL = (aq_mL[0] + lip_mL[0], aq_mL[1] + lip_mL[1])
+
+    return aq_mL, lip_mL, total_mL
 
 # Enum class for the SPN type
 class AqueousSPN(Enum):
@@ -122,16 +129,31 @@ print('\n')
 
 if pnPhase:
     pnRow = get_pn_row(pnTable, selected_cSPN.value, dol)
+
+    # Raw (protocol) values – NOT weight-adjusted
+    aq_protocol, lipid_protocol, total_protocol = calculate_protocol_spn(pnRow)
+
+    # Weight-adjusted actual patient volumes
     aq_target, lipid_target, total_spn = calculate_patient_spn(pnRow, weight)
 
-    print('='*80)
-    print(f"Users inputs: EN Volume: {en_volume}, DOL: {dol}, Weight: {weight}, Aqueous Type: {selected_cSPN.value}")
+    print("Protocol Targets (NOT weight factored):")
+    print('=' * 80)
+    print(f"User Inputs -> EN Volume: {en_volume}, DOL: {dol}, Weight: {weight}, SPN Type: {selected_cSPN.value}\n")
+    print(f"Aqueous SPN Target (mL/kg/day): {aq_protocol}")
+    print(f"Lipid SPN Target (mL/kg/day):   {lipid_protocol}")
+    print(f"Total SPN Volume (mL/kg/day):   {total_protocol}")
+    print('=' * 80)
+    print('\n')
+
+    print("Patient-Specific Targets (weight factored):")
+    print('=' * 80)
+    print(f"User Inputs -> EN Volume: {en_volume}, DOL: {dol}, Weight: {weight}, SPN Type: {selected_cSPN.value}\n")
     print(f"Aqueous SPN Target (mL/day): {aq_target}")
-    print(f"Lipid SPN Target (mL/day): {lipid_target}")
-    print(f"Total SPN Volume (mL/day): {total_spn}")
-    print(f"")
-    print('='*80)
+    print(f"Lipid SPN Target (mL/day):   {lipid_target}")
+    print(f"Total SPN Volume (mL/day):   {total_spn}")
+    print('=' * 80)
     print('\n')
 
 else:
-    print('TN Phase not implemented yet')
+    print("TN Phase not implemented yet")
+
