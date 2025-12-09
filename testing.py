@@ -1,135 +1,99 @@
+import pandas as pd
+import numpy as np
+from enum import Enum
+
+# Enum class for the SPN type
+class AqueousSPN(Enum):
+    CSPN1 = "cSPN1"
+    CSPN2 = "cSPN2"
+
+# Ask user for info
 en_volume = int(input("Please enter EN Volume in mL: "))
 dol = int(input("Please enter Day Of Life: "))
+
+# After assessing the dol and en vol, one of these will be true and operations on that table will happen
+pnPhase = False
+tnPhase = False
+valid = False
+
+#cSPN assign based on dol
+if dol < 0:
+    print("\nInvalid day of life")
+    dol = int(input("Please enter Day of Life: "))
+    
+elif dol <= 2:
+    selected_cSPN = AqueousSPN.CSPN1 # cSPN1
+    
+else:
+    selected_cSPN = AqueousSPN.CSPN2 # cSPN2
+
+# Check basic edge cases and selects which table to use
+while valid != True:
+
+    if en_volume > 120:
+        print("\nStop SPN unless clinically indicated")
+        en_volume = int(input("Please enter EN Volume in mL: "))
+
+    elif en_volume < 0:
+        print("\nCannot be less than zero")
+        en_volume = int(input("Please enter EN Volume in mL: "))
+        
+    elif en_volume >= 40 & dol >= 2:
+        tnPhase = True
+        valid = True
+        
+    elif en_volume > 0 & en_volume < 40:
+        pnPhase = True
+        valid = True
+
 weight = float(input("Please enter weight in kg: "))
 
-match (en_volume, dol):
 
-    case (ev, d) if ev < 40 and d == 1:
-        cspn_type = "cSPN1"
-        target_a = 65
-        min_a = 65
-        max_a = 65
-        target_l = 6
-        target_total = 71
+# Create a multi-level header for SPN products
+spn_header = pd.MultiIndex.from_product(
+    [['Aqueous SPN Product', 'Lipid SPN Product'],
+     ['Name', 'Target Volume']],
+    names=['Type', 'Value']
+)
 
-    case (ev, d) if ev < 40 and d == 2:
-        cspn_type = "cSPN1"
-        target_a = 80
-        min_a = 65
-        max_a = 90
-        target_l = 12
-        target_total = 92
+# Create a DataFrame with random values for SPN products
+pnTable = pd.DataFrame(
+    columns=spn_header
+)
 
-    case (ev, d) if ev < 40 and d == 3:
-        cspn_type = "cSPN2"
-        target_a = 95
-        min_a = 75
-        max_a = 120
-        target_l = 18
-        target_total = 113
+# Fill in product names
+pnTable[('Aqueous SPN Product', 'Name')] = ['cSPN1', 'cSPN1', 'cSPN2', 'cSPN2']
+pnTable[('Lipid SPN Product', 'Name')] = 'SMOFlipid with vits'
 
-    case (ev, d) if ev < 40 and d >= 4:
-        cspn_type = "cSPN2"
-        target_a = 105
-        min_a = 75
-        max_a = 120
-        target_l = 18
-        target_total = 123
+# Fill in target volumes (mL/kg/d)
+pnTable[('Aqueous SPN Product', 'Target Volume')] = [(65,65), (65,90), (75,120), (75,120)]
+pnTable[('Lipid SPN Product', 'Target Volume')] = [(6,12), (12,18), (18,24), (18,24)]
 
-    case (ev, d) if 40 <= ev < 50 and d == 2:
-        cspn_type = "cSPN1"
-        target_a = 60
-        min_a = 45
-        max_a = 70
-        target_l = 12
-        target_total = 112
+# Add regular columns for EN feed, Day of Life, and Total SPN Volume
+pnTable[('Patient Info', 'EN Feed Volume (mL)')] = "<40"
+pnTable[('Patient Info', 'Day of Life')] = [1, 2, 3, "4+"]
 
-    case (ev, d) if 40 <= ev < 50 and d >= 3:
-        cspn_type = "cSPN2"
-        target_a = 95
-        min_a = 55
-        max_a = 100
-        target_l = 18
-        target_total = 153
+# Function to add tuple ranges to show min and max total vals
+def add_ranges(t1, t2):
+    return (t1[0]+t2[0], t1[1]+t2[1])
 
-    case (ev, d) if 50 <= ev < 60 and d == 2:
-        cspn_type = "cSPN1"
-        target_a = 55
-        min_a = 40
-        max_a = 70
-        target_l = 12
-        target_total = 117
+# Calculate Total SPN Volume as a tuple range
+pnTable[('Patient Info', 'Total SPN Volume (mL/kg/d)')] = [
+    add_ranges(aq, lip) for aq, lip in zip(
+        pnTable[('Aqueous SPN Product', 'Target Volume')],
+        pnTable[('Lipid SPN Product', 'Target Volume')]
+    )
+]
 
-    case (ev, d) if 50 <= ev < 60 and d >= 3:
-        cspn_type = "cSPN2"
-        target_a = 85
-        min_a = 50
-        max_a = 95
-        target_l = 18
-        target_total = 153
+# Reorder columns: Patient Info first, SPN products after
+patient_cols = [col for col in pnTable.columns if col[0] == 'Patient Info']
+spn_cols = [col for col in pnTable.columns if col[0] != 'Patient Info']
+pnTable = pnTable[patient_cols + spn_cols]
 
-    case (ev, d) if 60 <= ev < 70 and d == 2:
-        cspn_type = "cSPN1"
-        target_a = 50
-        min_a = 40
-        max_a = 65
-        target_l = 12
-        target_total = 122
+print('='*135)
+print(pnTable)
+print('='*135)
 
-    case (ev, d) if 60 <= ev < 70 and d >= 3:
-        cspn_type = "cSPN2"
-        target_a = 80
-        min_a = 45
-        max_a = 90
-        target_l = 12
-        target_total = 152
+# Operate on user input and use table to show target val
+print(f'\nUsers inputs: \nEN Volume: {en_volume} \nDOL: {dol} \nWeight: {weight} \nAqueous Type: {selected_cSPN.value}')
 
-    case (ev, d) if 70 <= ev < 80:
-        cspn_type = "cSPN2"
-        target_a = 70
-        min_a = 40
-        max_a = 85
-        target_l = 12
-        target_total = 152
-
-    case (ev, d) if 80 <= ev < 90:
-        cspn_type = "cSPN2"
-        target_a = 60
-        min_a = 40
-        max_a = 75
-        target_l = 12
-        target_total = 152
-
-    case (ev, d) if 90 <= ev < 100:
-        cspn_type = "cSPN2"
-        target_a = 50
-        min_a = 30
-        max_a = 65
-        target_l = 12
-        target_total = 152
-
-    case (ev, d) if 100 <= ev < 110:
-        cspn_type = "cSPN2"
-        target_a = 40
-        min_a = 20
-        max_a = 55
-        target_l = 12
-        target_total = 152
-
-    case (ev, d) if 110 <= ev < 120:
-        cspn_type = "cSPN2"
-        target_a = 30
-        min_a = 10
-        max_a = 45
-        target_l = 12
-        target_total = 152
-
-    case (ev, d) if ev >= 120:
-        cspn_type = None  # prevents crashing later
-        print("Stop SPN unless clinically indicated")
-
-if en_volume < 120:
-    print("CPSN Type: ", cspn_type)
-    print("Target Aqueous SPN Volume:", target_a, "with a minimum of", min_a, "and a maximum of", max_a)
-    print("Target Lipid SPN Volume: ", target_l)
-    print("Target Total Fluid Volume: ", target_total)
