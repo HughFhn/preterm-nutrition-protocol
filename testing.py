@@ -38,11 +38,11 @@ while valid != True:
         print("\nCannot be less than zero")
         en_volume = int(input("Please enter EN Volume in mL: "))
         
-    elif en_volume >= 40 & dol >= 2:
+    elif en_volume >= 40 and dol >= 2:
         tnPhase = True
         valid = True
         
-    elif en_volume > 0 & en_volume < 40:
+    elif en_volume > 0 and en_volume < 40:
         pnPhase = True
         valid = True
 
@@ -97,3 +97,22 @@ print('='*135)
 # Operate on user input and use table to show target val
 print(f'\nUsers inputs: \nEN Volume: {en_volume} \nDOL: {dol} \nWeight: {weight} \nAqueous Type: {selected_cSPN.value}')
 
+if pnPhase:
+    # Use a display-friendly DOL for filtering, without changing original dol
+    dol_filter = '4+' if dol >= 4 else dol
+
+    # Filter table by Aqueous SPN type and Day of Life
+    pnRow = pnTable.loc[
+        (pnTable[('Aqueous SPN Product', 'Name')] == selected_cSPN.value) &
+        (pnTable[('Patient Info', 'Day of Life')] == dol_filter)
+    ]
+
+    # Check if any row matched
+    if pnRow.empty:
+        raise ValueError(f"No matching SPN row found for {selected_cSPN.value} and DOL {dol_filter}")
+
+    # pnRow now contains the correct row
+    print(pnRow)
+    
+else: # TN not done yet
+    print('Not done yet')
