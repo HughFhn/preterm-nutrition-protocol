@@ -1,11 +1,40 @@
 import pandas as pd
-import numpy as np
 from enum import Enum
+
+# === Functions ===
+
+# Function to add tuple ranges to show min and max total vals
+def add_ranges(t1, t2):
+    return (t1[0]+t2[0], t1[1]+t2[1])
+
+# Get PN row based on cSPN type and DOL
+def get_pn_row(table, aqueous_type, dol):
+    dol_filter = '4+' if dol >= 4 else dol
+    row = table.loc[
+        (table[('Aqueous SPN Product', 'Name')] == aqueous_type) &
+        (table[('Patient Info', 'Day of Life')] == dol_filter)
+    ]
+    if row.empty:
+        raise ValueError(f"No matching PN row for {aqueous_type} and DOL {dol_filter}")
+    return row.iloc[0]  # Return a single row as Series
+ 
+# Calculate patient-specific SPN target volumes
+def calculate_patient_spn(row, weight):
+    # Extract protocol ranges directly from the row
+    aq_target = row[('Aqueous SPN Product', 'Target Volume')]
+    lipid_target = row[('Lipid SPN Product', 'Target Volume')]
+    
+    # Total SPN range = sum of tuples
+    total_spn = (aq_target[0] + lipid_target[0], aq_target[1] + lipid_target[1])
+    
+    return aq_target, lipid_target, total_spn
 
 # Enum class for the SPN type
 class AqueousSPN(Enum):
     CSPN1 = "cSPN1"
     CSPN2 = "cSPN2"
+
+# === Application ===
 
 # Ask user for info
 en_volume = int(input("Please enter EN Volume in mL: "))
@@ -48,7 +77,6 @@ while valid != True:
 
 weight = float(input("Please enter weight in kg: "))
 
-
 # Create a multi-level header for SPN products
 spn_header = pd.MultiIndex.from_product(
     [['Aqueous SPN Product', 'Lipid SPN Product'],
@@ -56,12 +84,10 @@ spn_header = pd.MultiIndex.from_product(
     names=['Type', 'Value']
 )
 
-# Create a DataFrame with random values for SPN products
-pnTable = pd.DataFrame(
-    columns=spn_header
-)
+# === Create daframe ===
 
-# Fill in product names
+# Create DataFrame and fill clinical protocol
+pnTable = pd.DataFrame(columns=spn_header)
 pnTable[('Aqueous SPN Product', 'Name')] = ['cSPN1', 'cSPN1', 'cSPN2', 'cSPN2']
 pnTable[('Lipid SPN Product', 'Name')] = 'SMOFlipid with vits'
 
@@ -72,10 +98,6 @@ pnTable[('Lipid SPN Product', 'Target Volume')] = [(6,12), (12,18), (18,24), (18
 # Add regular columns for EN feed, Day of Life, and Total SPN Volume
 pnTable[('Patient Info', 'EN Feed Volume (mL)')] = "<40"
 pnTable[('Patient Info', 'Day of Life')] = [1, 2, 3, "4+"]
-
-# Function to add tuple ranges to show min and max total vals
-def add_ranges(t1, t2):
-    return (t1[0]+t2[0], t1[1]+t2[1])
 
 # Calculate Total SPN Volume as a tuple range
 pnTable[('Patient Info', 'Total SPN Volume (mL/kg/d)')] = [
@@ -90,29 +112,26 @@ patient_cols = [col for col in pnTable.columns if col[0] == 'Patient Info']
 spn_cols = [col for col in pnTable.columns if col[0] != 'Patient Info']
 pnTable = pnTable[patient_cols + spn_cols]
 
+print('\n')
 print('='*135)
 print(pnTable)
 print('='*135)
+print('\n')
 
-# Operate on user input and use table to show target val
-print(f'\nUsers inputs: \nEN Volume: {en_volume} \nDOL: {dol} \nWeight: {weight} \nAqueous Type: {selected_cSPN.value}')
+# === Grab volumes and totals based on input info ===
 
 if pnPhase:
-    # Use a display-friendly DOL for filtering, without changing original dol
-    dol_filter = '4+' if dol >= 4 else dol
+    pnRow = get_pn_row(pnTable, selected_cSPN.value, dol)
+    aq_target, lipid_target, total_spn = calculate_patient_spn(pnRow, weight)
 
-    # Filter table by Aqueous SPN type and Day of Life
-    pnRow = pnTable.loc[
-        (pnTable[('Aqueous SPN Product', 'Name')] == selected_cSPN.value) &
-        (pnTable[('Patient Info', 'Day of Life')] == dol_filter)
-    ]
+    print('='*80)
+    print(f"Users inputs: EN Volume: {en_volume}, DOL: {dol}, Weight: {weight}, Aqueous Type: {selected_cSPN.value}")
+    print(f"Aqueous SPN Target (mL/day): {aq_target}")
+    print(f"Lipid SPN Target (mL/day): {lipid_target}")
+    print(f"Total SPN Volume (mL/day): {total_spn}")
+    print(f"")
+    print('='*80)
+    print('\n')
 
-    # Check if any row matched
-    if pnRow.empty:
-        raise ValueError(f"No matching SPN row found for {selected_cSPN.value} and DOL {dol_filter}")
-
-    # pnRow now contains the correct row
-    print(pnRow)
-    
-else: # TN not done yet
-    print('Not done yet')
+else:
+    print('TN Phase not implemented yet')
