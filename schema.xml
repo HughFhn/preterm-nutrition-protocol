@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+    <!-- ===== COMMON TYPES ===== -->
+
+    <!-- Day of Life (integer ≥1) -->
+    <xs:simpleType name="DOLType">
+        <xs:restriction base="xs:integer">
+            <xs:minInclusive value="1"/>
+            <xs:maxInclusive value="100"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Weight: 0.2kg – 8kg range -->
+    <xs:simpleType name="WeightType">
+        <xs:restriction base="xs:decimal">
+            <xs:minInclusive value="0.2"/>
+            <xs:maxInclusive value="8"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- EN volume: 0–300 ml/kg/d -->
+    <xs:simpleType name="ENVolumeType">
+        <xs:restriction base="xs:decimal">
+            <xs:minInclusive value="0"/>
+            <xs:maxInclusive value="120"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Aqueous Product cSPN(1/2) -->
+    <xs:simpleType name="AqueousType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="cSPN1" />
+            <xs:enumeration value="cSPN2" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Calculation Status (optional)-->
+    <xs:simpleType name="calculationStatusType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Successful" />
+            <xs:enumeration value="Error" />
+            <xs:enumeration value="Warning" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Aqueous Target Volume -->
+    <xs:simpleType name="AqueousVol">
+        <xs:restriction base="xs:decimal">
+            <xs:minInclusive value="10"/>
+            <xs:maxInclusive value="120"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Lipid Target Volume -->
+    <xs:simpleType name="LipidVol">
+        <xs:restriction base="xs:decimal">
+            <xs:minInclusive value="6"/>
+            <xs:maxInclusive value="24"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Total Fluid Volume (Transition Phase Result) -->
+    <xs:simpleType name="TotalFluid">
+        <xs:restriction base="xs:decimal">
+            <xs:minInclusive value="97"/>
+            <xs:maxInclusive value="167"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Total SPN Volume (Parenteral Phase Result) -->
+    <xs:simpleType name="TotalSPN">
+        <xs:restriction base="xs:decimal">
+            <xs:minInclusive value="71"/>
+            <xs:maxInclusive value="144"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Root Element -->
+
+    <xs:element name="SPNVolumeCalculationRequest">
+        <xs:complexType>
+            <xs:sequence>
+
+                <!-- Patient info block -->
+                <xs:element name="Patient">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="Weight" type="WeightType"/>
+                            <xs:element name="DOL" type="DOLType"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+
+                <!-- Feeding context block -->
+                <xs:element name="FeedingStatus">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="previousENVolume"
+                                        type="ENVolumeType"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+
+
+                <!-- Metadata (optional) -->
+                <xs:element name="Meta" minOccurs="0">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="hospital" type="xs:string" minOccurs="0"/>
+                            <xs:element name="timestamp" type="xs:dateTime" minOccurs="0"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+
+    <!-- Calculation result -->
+
+    <xs:element name="CalculationResult">
+        <xs:complexType>
+            <xs:sequence>
+
+                <!-- Aqueous type name 
+                ** The aqueous status is derived from the DOL and the EN val ** 
+                -->
+                <xs:element name="AqueousStatus">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="currentAqueousType"
+                                        type="AqueousType"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+
+                <!-- Target Volumes -->
+                <xs:element name="TargetVolume">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="AqueousTargetVolume" type="AqueousVol" />
+                            <xs:element name="LipidTargetVolume" type="LipidVol" />
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                
+                <!-- Totals -->
+                <xs:element name="TotalVolumes">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="TotalSPNVolume" type="TotalSPN" />
+                            <xs:element name="TotalFluidVolume" type="TotalFluid" />
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+
+                <!-- Calculation Status (optional)-->
+                <xs:element name="calculationResult">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="calculationStatus" 
+                                        type="calculationStatusType" />
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>
