@@ -108,6 +108,6 @@ class PNProtocol(ProtocolBase):
         print('\n')
 
 if __name__ == '__main__':
-    pn_protocol = PnProtocol()
+    pn_protocol = PNProtocol()
     pn_protocol.run()
     

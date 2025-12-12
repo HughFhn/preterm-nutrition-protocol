@@ -70,10 +70,10 @@ class TNProtocol(ProtocolBase):
                 "lipid_target": [0],
             }
         }
-        self.table = self._create_tn_table()
+        self.table = self.create_tn_table()
 
     def get_row(self, aqueous_type, dol, enVal):
-        dol_filter = self._normalize_dol(dol)
+        dol_filter = self.normalize_dol(dol)
         row = self.table.loc[
             (self.table[('Aqueous SPN Product', 'Name')] == aqueous_type) &
             (self.table[('Patient Info', 'Day of Life')] == dol_filter) &
@@ -125,7 +125,7 @@ class TNProtocol(ProtocolBase):
         )
         tnTable = pd.DataFrame(columns=spn_header)
         tnTable = pd.concat([
-            self._build_tn_table(self.tn_blocks[k], int(k)) for k in self.tn_blocks
+            self.build_tn_table(self.tn_blocks[k], int(k)) for k in self.tn_blocks
         ], ignore_index=True)
         tnTable.set_index('enVal', inplace=True)
         return tnTable
@@ -147,7 +147,7 @@ class TNProtocol(ProtocolBase):
         return aq_mL, lip_mL, total_mL
 
     def display_results(self):
-        tnRow = self._get_row(self.selected_cSPN.value, self.dol, self.en_volume)
+        tnRow = self.get_row(self.selected_cSPN.value, self.dol, self.en_volume)
 
         print('\n')
         print('=' * 135)
