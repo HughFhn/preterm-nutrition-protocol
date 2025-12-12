@@ -40,10 +40,11 @@
                     <input type="number" id="weight" name="weight" required min="0.1" step="0.01" placeholder="Enter weight in kg">
                 </div>
                 
-                <button type="submit" class="btn">Calculate Protocol</button>
+                <button type="submit" class="button">Calculate Protocol</button>
             </form>
         </div>
         
+        <div class="output">
         {% if output %}
         <div class="card">
             <div class="output-card">
@@ -52,6 +53,7 @@
             </div>
         </div>
         {% endif %}
+        </div>
     </div>
 </body>
 </html>
