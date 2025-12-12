@@ -1,5 +1,8 @@
+# This table file is proof of concept and 
+# helped design and think of the implementation and structure
+
 import pandas as pd
-from enum import Enum
+from protocol.enumClass import AqueousSPN
 
 # === Functions ===
 
@@ -35,11 +38,6 @@ def calculate_patient_spn(row, weight):
     total_mL = (aq_mL[0] + lip_mL[0], aq_mL[1] + lip_mL[1])
 
     return aq_mL, lip_mL, total_mL
-
-# Enum class for the SPN type
-class AqueousSPN(Enum):
-    CSPN1 = "cSPN1"
-    CSPN2 = "cSPN2"
 
 # === Application ===
 

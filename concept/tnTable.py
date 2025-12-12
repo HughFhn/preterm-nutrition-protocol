@@ -1,3 +1,6 @@
+# This table file is proof of concept and 
+# helped design and think of the implementation and structure
+
 import pandas as pd
 # See all columns and rows:
 pd.set_option('display.max_rows', None)
