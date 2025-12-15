@@ -1,13 +1,14 @@
-import logo from './logo.svg';
 import './App.css';
 import { useState } from 'react';
 import axios from 'axios';
 import PopUp from './PopUp';
+import CalculationForm from './CalculationForm.js';
 
 export default function App() {
   const [form, setForm] = useState({ en_volume: "", dol: "", weight: ""});
   const [result, setResult] = useState(null);
   const [popUpOpen, setPopUpOpen] = useState(false);
+  const [extraCalculation, setExtraCalculation] = useState(false);
 
   const handleFormChange = (e) => {
     setForm({...form, [e.target.name]: e.target.value});
@@ -94,6 +95,10 @@ export default function App() {
         <PopUp 
           isOpen={popUpOpen}
           onClose={() => setPopUpOpen(false)}
+          onConfirm={() => {
+            setPopUpOpen(false);
+            setExtraCalculation(true);
+          }}
           message={
             <ol className='popup-list'>
               <li>Liberalise the daily fluid allowance as clinically acceptable</li>
@@ -102,7 +107,22 @@ export default function App() {
               <li>Example: 120 (Total SPN) - 40 (EN) - 18 (lipid) = 62 (Aqueous)</li>
             </ol>}
           option1={'Cancel'}
+          option2={'Continue'}
         />
+        {extraCalculation && (
+          <div className="modal-overlay">
+            <div className="modal">
+              <CalculationForm />
+
+              <button
+                className="close-button"
+                onClick={() => setExtraCalculation(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
       </div>
   )
 };

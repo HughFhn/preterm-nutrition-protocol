@@ -161,6 +161,103 @@ def calculate():
         "targettotal_with_weight": target_total * weight
     })
 
+@app.route('/calculate-again', methods=['POST'])
+def calculate_again():
+    data = request.get_json()
+    en_volume = data.get('en_volume')
+    dol = data.get('dol')
+
+    total_a = None
+    target_l = None
+    target_total = None
+    match (en_volume, dol):
+        
+        case (ev, d) if ev < 40 and d == 1:
+            target_l = 6
+            target_total = 71
+            total_a = target_total - en_volume - target_l
+
+        case (ev, d) if ev < 40 and d == 2:
+            target_l = 12
+            target_total = 92
+            total_a = target_total - en_volume - target_l
+
+        case (ev, d) if ev < 40 and d == 3:
+            target_l = 18
+            target_total = 113
+            total_a = target_total - en_volume - target_l
+
+        case (ev, d) if ev < 40 and d >= 4:
+            target_l = 18
+            target_total = 123
+            total_a = target_total - en_volume - target_l
+
+        case (ev, d) if 40 <= ev < 50 and d == 2:
+            target_l = 12
+            target_total = 112
+            total_a = target_total - en_volume - target_l
+
+        case (ev, d) if 40 <= ev < 50 and d >= 3:
+            target_l = 18
+            target_total = 153
+            total_a = target_total - en_volume - target_l
+
+        case (ev, d) if 50 <= ev < 60 and d == 2:
+            target_l = 12
+            target_total = 117
+            total_a = target_total - en_volume - target_l
+
+        case (ev, d) if 50 <= ev < 60 and d >= 3:
+            target_l = 18
+            target_total = 153
+            total_a = target_total - en_volume - target_l
+
+        case (ev, d) if 60 <= ev < 70 and d == 2:
+            target_l = 12
+            target_total = 122
+            total_a = target_total - en_volume - target_l
+
+        case (ev, d) if 60 <= ev < 70 and d >= 3:
+            target_l = 12
+            target_total = 152
+            total_a = target_total - en_volume - target_l
+
+        case (ev, d) if 70 <= ev < 80:
+            target_l = 12
+            target_total = 152
+            total_a = target_total - en_volume - target_l
+
+        case (ev, d) if 80 <= ev < 90:
+            target_l = 12
+            target_total = 152
+            total_a = target_total - en_volume - target_l
+
+        case (ev, d) if 90 <= ev < 100:
+            target_l = 12
+            target_total = 152
+            total_a = target_total - en_volume - target_l
+
+        case (ev, d) if 100 <= ev < 110:
+            target_l = 12
+            target_total = 152
+            total_a = target_total - en_volume - target_l
+
+        case (ev, d) if 110 <= ev < 120:
+            target_l = 12
+            target_total = 152
+            total_a = target_total - en_volume - target_l
+
+        case (ev, d) if ev >= 120:
+            return jsonify({
+                "message": "Stop SPN unless clinically indicated"
+            }), 200
+
+    if en_volume < 120:
+        return jsonify({
+            "target_a": total_a,
+            "target_l": target_l,
+            "target_total": target_total
+        }), 200
 
 
 if __name__ == '__main__':

@@ -1,0 +1,64 @@
+.calculation-form {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    margin: 0 auto;
+    position: relative;
+}
+
+.calculation-form .input-group {
+    margin-bottom: 1.5rem;
+}
+
+.calculation-form .input-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #333;
+    font-size: 1rem;
+}
+
+.calculation-form .input-group input {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.calculation-form .input-group input:focus {
+    border-color: #037a3f;
+    box-shadow: 0 0 0 2px rgba(3, 122, 63, 0.25);
+    outline: none;
+}
+
+.calculation-form button {
+    width: 100%;
+    padding: 0.8rem;
+    background-color: #037a3f;
+    border:none;
+    border-radius: 6px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.calculation-form button:hover {
+    background-color: #025d2f;
+}
+
+.calculation-form .result {
+  margin-top: 1.5rem;
+  background: #f7f7f7;
+  padding: 1rem;
+  border-radius: 6px;
+}
+
+.calculation-form .result p {
+  margin: 0.5rem 0;
+  font-size: 1rem;
+}

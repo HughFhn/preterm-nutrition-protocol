@@ -1,56 +1,21 @@
 .App {
   text-align: center;
+  font-family: Arial, sans-serif;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.warning-text{
+.warning-text {
   color: #ff0000;
-  bold: true;
+  font-weight: bold;
 }
 
 .calculator-container {
   display: flex;
   justify-content: center;
-  align-items: flex-start; 
-  min-height: 100vh; 
+  align-items: flex-start;
+  min-height: 100vh;
   padding: 2rem 1rem;
   background: linear-gradient(to right, #6793f1, #8dc28f);
 }
-
 
 .form-wrapper {
   width: 90%;
@@ -65,20 +30,21 @@
   width: 100%;
 }
 
-input-group {
+.input-group {
   margin-bottom: 1.5rem;
+  text-align: left;
 }
-
 
 .input-group label {
   display: block;
   margin-bottom: 0.5rem;
   color: black;
-  font-size: 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
 }
 
 .input-group input {
-  width: 90%;
+  width: 100%;
   padding: 0.8rem;
   border: 1px solid #ccc;
   border-radius: 8px;
@@ -91,19 +57,17 @@ input-group {
   outline: none;
 }
 
-
 .input-group input.error {
   border-color: #e74c3c;
 }
 
-.calculate-button {
-  width: 50%;
+.calculate-button,
+.fluid-button {
+  width: 100%;
   margin-top: 20px;
   padding: 0.8rem;
-  background-color: #597ef7;
   border: none;
   border-radius: 4px;
-  color: white;
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
@@ -112,14 +76,28 @@ input-group {
   align-self: center;
 }
 
+.calculate-button {
+  background-color: #597ef7;
+  color: white;
+}
 
 .calculate-button:hover {
   background: #3b53a3;
 }
 
-
 .calculate-button:active {
   transform: scale(0.98);
+}
+
+.fluid-button {
+  background-color: #ffffff;
+  color: #597ef7;
+  border: 1px solid #597ef7;
+}
+
+.fluid-button:hover {
+  background-color: #597ef7;
+  color: #fff;
 }
 
 .weight_paragraph {
@@ -132,7 +110,8 @@ input-group {
   position: sticky;
   top: 0;
   padding: 10px 16px;
-  background:  #ffffff;
+  background: #ffffff;
+  z-index: 10;
 }
 
 .popup-list {
@@ -146,18 +125,178 @@ input-group {
   line-height: 1.5;
 }
 
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.calculation-form .close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #ff4c4c;
+  border: none;
+  color: white;
+  padding: 0.3rem 0.6rem;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.App {
+  text-align: center;
+  font-family: Arial, sans-serif;
+}
+
+.warning-text {
+  color: #ff0000;
+  font-weight: bold;
+}
+
+.calculator-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  background: linear-gradient(to right, #6793f1, #8dc28f);
+}
+
+.form-wrapper {
+  width: 90%;
+  max-width: 400px;
+}
+
+.calculator-card {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.05);
+  padding: 2rem;
+  width: 100%;
+}
+
+.input-group {
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: black;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.input-group input:focus {
+  border-color: #000000;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.25);
+  outline: none;
+}
+
+.input-group input.error {
+  border-color: #e74c3c;
+}
+
+.calculate-button,
 .fluid-button {
-  width: 80%;
+  width: 100%;
   margin-top: 20px;
   padding: 0.8rem;
-  background-color: #ffffff;
   border: none;
   border-radius: 4px;
-  color: #597ef7;
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.3s, transform 0.1s;
   letter-spacing: 1px;
   align-self: center;
+}
+
+.calculate-button {
+  background-color: #597ef7;
+  color: white;
+}
+
+.calculate-button:hover {
+  background: #3b53a3;
+}
+
+.calculate-button:active {
+  transform: scale(0.98);
+}
+
+.fluid-button {
+  background-color: #ffffff;
+  color: #597ef7;
+  border: 1px solid #597ef7;
+}
+
+.fluid-button:hover {
+  background-color: #597ef7;
+  color: #fff;
+}
+
+.weight_paragraph {
+  margin-top: 10px;
+  font-size: 1.2rem;
+  color: #0004ff;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  padding: 10px 16px;
+  background: #ffffff;
+  z-index: 10;
+}
+
+.popup-list {
+  margin: 0;
+  padding-left: 1.5rem;
+  font-family: system-ui, sans-serif;
+}
+
+.popup-list li {
+  margin: 0.4rem 0;
+  line-height: 1.5;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.calculation-form .close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #ff4c4c;
+  border: none;
+  color: white;
+  padding: 0.3rem 0.6rem;
+  border-radius: 50%;
+  cursor: pointer;
 }
