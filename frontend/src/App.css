@@ -53,7 +53,7 @@
 
 
 .form-wrapper {
-  width: 90%;
+  width: 30%;
   max-width: 400px;
 }
 
@@ -63,6 +63,7 @@
   box-shadow: 0 14px 28px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.05);
   padding: 2rem;
   width: 100%;
+  display: table-cell;
 }
 
 input-group {

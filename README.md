@@ -1,3 +1,7 @@
+# *NOTE*
+
+The files uploaded to this repo are for prototyping purposes. Feel free to use logic/ functions here but be sure to follow the stack outlined.
+
 # Feeding Protocol Doc
 
 ## Premise:
@@ -23,7 +27,7 @@ The biobank which will contain samples of the infants or mothers sample is gover
 ## Goals:
 
 The goal for this project is to make this version of the protocol simple as the existing form is a small piece of paper that clinicians must carry and reference.
-This new project wants to abstract some elements of the protocol and make the form more readable. 
+This new project wants to abstract some elements of the protocol and make the form more readable.
 
 ## Possibilities:
 
@@ -31,17 +35,16 @@ There is confusion on whether this application will communicate with MN-CMS via 
 
 There is the possibility of this being used in other hospitals also. Because of this, some concepts may need to be abstracted as these new hospitals may not be familiar with the protocols processes and conditions.
 
-## Stack:
+## Stack: (To be implemented)
 
 | Stage    | Tech stack               | Explination                                                                 |
 | -------- | ------------------------ | --------------------------------------------------------------------------- |
 | Frontend | React TS                 | TS for type safety + React is a solid framewok                              |
-| Backend  | Python                   | Simple. Possibility for AI integration for advising.                        |
+| Backend  | Python                   | Simple. Possibility for AI integration for advising on MN-CMS.              |
 | Database | PostgreSQL               | Auditing, wide frameworks compatible and integrates well with FHIR servers. |
 | Hosting  | Hosting on AWS Beanstalk | Flexible and CI/CD                                                          |
 
 ## Design:
 
-
-
-
+This project should prioritise consistency and type safety for the data being used as this is important clinical data and inform that must be in certain forms.  
+There is an XML schema to assist with design and implementation as well as a rough prototype with some existing functionality.
