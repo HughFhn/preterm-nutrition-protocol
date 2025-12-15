@@ -63,6 +63,8 @@ def calculate():
 
         # Return results matching frontend expectations
         return jsonify({
+            'tn_phase': protocol.tnPhase,
+            'pn_phase': protocol.pnPhase,
             'cspn_type': protocol.selected_cSPN.value,
             'target_aq': float(aq_target),
             'min_aq': float(aq_min),

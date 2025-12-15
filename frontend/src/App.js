@@ -111,7 +111,15 @@ export default function App() {
 											{result.target_lip} mL/kg/d
 										</p>
 										<p>
-											<strong>Total SPN Volume: </strong>
+											{result.pn_phase ? (
+												<strong>
+													Total SPN Volume:{" "}
+												</strong>
+											) : (
+												<strong>
+													Total Fluid Volume:{" "}
+												</strong>
+											)}
 											{result.target_total} mL/kg/d
 										</p>
 										<p className="weight_paragraph">
@@ -128,11 +136,25 @@ export default function App() {
 											{result.target_lip_weight} mL/d
 										</p>
 										<p className="weight_paragraph">
-											<strong>
-												Total SPN Volume for patient
-												weight:{" "}
-											</strong>
-											{result.target_total_weight} mL/d
+											{result.pn_phase ? (
+												<strong>
+													Total SPN Volume for patient
+													weight:{" "}
+												</strong>
+											) : (
+												<strong>
+													Total Fluid Volume for
+													patient weight:{" "}
+												</strong>
+											)}
+											{result.pn_phase
+												? result.target_total_weight
+												: result.target_total_weight +
+												  Number(form.en_volume) *
+														Number(
+															form.weight
+														)}{" "}
+											mL/d
 										</p>
 									</>
 								)}
