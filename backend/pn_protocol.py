@@ -24,6 +24,7 @@ class PNProtocol(ProtocolBase):
         pnTable[('Aqueous SPN Product', 'Min Volume')] = [65, 65, 75, 75]
         pnTable[('Aqueous SPN Product', 'Max Volume')] = [65, 90, 120, 120]
         
+        # ADD LIPID MIN/MAX COLUMNS
         pnTable[('Lipid SPN Product', 'Target Volume')] = [6, 12, 18, 18]
         pnTable[('Lipid SPN Product', 'Min Volume')] = [6, 12, 18, 18]
         pnTable[('Lipid SPN Product', 'Max Volume')] = [6, 12, 18, 18]
@@ -64,22 +65,96 @@ class PNProtocol(ProtocolBase):
         return aq_target, aq_min, aq_max, lip_target, total_target
     
     def calculate_patient_spn(self, row):
+        """
+        Calculate patient-specific SPN volumes based on TFI constraints
+        Following PDF protocol: Lipid priority, then aqueous with remaining fluid
+        """
+
+        # ===== Protocol constraints (mL/kg/day) =====
         aq_target = row[('Aqueous SPN Product', 'Target Volume')]
         aq_min = row[('Aqueous SPN Product', 'Min Volume')]
         aq_max = row[('Aqueous SPN Product', 'Max Volume')]
+
         lip_target = row[('Lipid SPN Product', 'Target Volume')]
+        lip_min = row[('Lipid SPN Product', 'Min Volume')]
+        lip_max = row[('Lipid SPN Product', 'Max Volume')]
+
+        # ===== Patient inputs =====
+        en = self.en_volume          # mL/kg/day
+        tfi = self.tfi               # mL/kg/day
+        wt = self.weight             # kg
+
+        # ===== STEP 1: Available fluid for SPN =====
+        available_spn = max(0, tfi - en)
+
+        print("\n--- INPUTS ---")
+        print(f"EN: {en} mL/kg/d")
+        print(f"TFI: {tfi} mL/kg/d")
+        print(f"Available for SPN: {available_spn} mL/kg/d")
+
+        print("\n--- CONSTRAINTS ---")
+        print(f"Aqueous min / target / max: {aq_min} / {aq_target} / {aq_max}")
+        print(f"Lipid min / target / max: {lip_min} / {lip_target} / {lip_max}")
+
+        # ===== STEP 2: Allocate lipid first (per PDF priority) =====
+        # Allocate as much lipid as possible, up to target, not exceeding available
+        lipid_alloc = min(lip_target, available_spn)
         
-        aq_target_ml = aq_target * self.weight
-        aq_min_ml = aq_min * self.weight
-        aq_max_ml = aq_max * self.weight
+        # Check if we met lipid minimum
+        if lipid_alloc < lip_min:
+            lipid_status = "Below minimum"
+        else:
+            lipid_status = "OK"
+
+        print("\n--- AFTER LIPID ALLOCATION ---")
+        print(f"Lipid allocated: {lipid_alloc} mL/kg/d ({lipid_status})")
+
+        # ===== STEP 3: Remaining fluid for aqueous =====
+        remaining = available_spn - lipid_alloc
+
+        print(f"Remaining for aqueous: {remaining} mL/kg/d")
+
+        # ===== STEP 4: Allocate aqueous with remaining fluid =====
+        # Allocate what we can, up to max
+        aqueous_alloc = min(remaining, aq_max)
         
-        lip_target_ml = lip_target * self.weight
-        
-        total_target_ml = aq_target_ml + lip_target_ml
-        
-        return aq_target_ml, aq_min_ml, aq_max_ml, lip_target_ml, total_target_ml
+        # Determine status based on protocol guidelines
+        if aqueous_alloc >= aq_target:
+            status = "Target met"
+        elif aq_min <= aqueous_alloc < aq_target:
+            status = "Between minimum and target"
+        elif aqueous_alloc < aq_min:
+            status = "Below minimum requirement"
+        else:
+            status = "OK"
+            
+        print("\n--- FINAL SPN ALLOCATION (mL/kg/day) ---")
+        print(f"Aqueous allocated: {aqueous_alloc} mL/kg/d")
+        print(f"Lipid allocated: {lipid_alloc} mL/kg/d")
+        print(f"Status: {status}")
+
+        # ===== STEP 5: Convert to patient volumes (mL/day) =====
+        aqueous_ml = aqueous_alloc * wt
+        lipid_ml = lipid_alloc * wt
+        total_spn_ml = aqueous_ml + lipid_ml
+
+        print("\n--- PATIENT VOLUMES (mL/day) ---")
+        print(f"Aqueous: {aqueous_ml:.2f} mL/day")
+        print(f"Lipid: {lipid_ml:.2f} mL/day")
+        print(f"Total SPN: {total_spn_ml:.2f} mL/day")
+        print(f"Weight: {wt} kg")
+
+        return {
+            "aqueous_per_kg": aqueous_alloc,
+            "lipid_per_kg": lipid_alloc,
+            "aqueous_ml_day": aqueous_ml,
+            "lipid_ml_day": lipid_ml,
+            "total_spn_ml": total_spn_ml,
+            "status": status
+        }
 
     def display_results(self):
+        """Display calculation results"""
         print('\n')
         print('='*135)
         print(self.table)
@@ -89,24 +164,25 @@ class PNProtocol(ProtocolBase):
         pnRow = self.get_row()
         
         aq_target, aq_min, aq_max, lip_target, total_target = self.calculate_protocol_spn(pnRow)
-        aq_target_ml, aq_min_ml, aq_max_ml, lip_target_ml, total_target_ml = self.calculate_patient_spn(pnRow)
+        patient = self.calculate_patient_spn(pnRow)
         
-        print("Protocol Targets (NOT weight factored):")
-        print('=' * 80)
-        print(f"User Inputs -> EN Volume: {self.en_volume}, DOL: {self.dol}, Weight: {self.weight}, SPN Type: {self.selected_cSPN.value}\n")
-        print(f"Aqueous SPN Target (mL/kg/day): {aq_target} (min: {aq_min}, max: {aq_max})")
-        print(f"Lipid SPN Target (mL/kg/day):   {lip_target}")
-        print(f"Total SPN Volume (mL/kg/day):   {total_target}")
-        print('=' * 80)
-        print('\n')
+        print("\n" + "="*80)
+        print("PROTOCOL TARGETS (mL/kg/day)")
+        print("="*80)
+        print(f"Inputs: EN={self.en_volume}, TFI={self.tfi}, DOL={self.dol}, Weight={self.weight}kg, cSPN={self.selected_cSPN.value}")
+        print(f"\nAqueous Target: {aq_target} (min: {aq_min}, max: {aq_max})")
+        print(f"Lipid Target: {lip_target}")
+        print(f"Total SPN Target: {total_target}")
+        print("="*80)
 
-        print("Patient-Specific Targets (weight factored):")
-        print('=' * 80)
-        print(f"User Inputs -> EN Volume: {self.en_volume}, DOL: {self.dol}, Weight: {self.weight}, SPN Type: {self.selected_cSPN.value}\n")
-        print(f"Aqueous SPN Target (mL/day): {aq_target_ml} (min: {aq_min_ml}, max: {aq_max_ml})")
-        print(f"Lipid SPN Target (mL/day):   {lip_target_ml}")
-        print(f"Total SPN Volume (mL/day):   {total_target_ml}")
-        print('=' * 80)
+        print("\n" + "="*80)
+        print("PATIENT-SPECIFIC VOLUMES")
+        print("="*80)
+        print(f"Aqueous: {patient['aqueous_per_kg']:.2f} mL/kg/d  →  {patient['aqueous_ml_day']:.2f} mL/day")
+        print(f"Lipid:   {patient['lipid_per_kg']:.2f} mL/kg/d  →  {patient['lipid_ml_day']:.2f} mL/day")
+        print(f"Total:   {patient['aqueous_per_kg'] + patient['lipid_per_kg']:.2f} mL/kg/d  →  {patient['total_spn_ml']:.2f} mL/day")
+        print(f"\nStatus: {patient['status']}")
+        print("="*80)
         print('\n')
 
 if __name__ == '__main__':

@@ -2,6 +2,8 @@
 
 The files uploaded to this repo are for prototyping purposes. Feel free to use logic/ functions here but be sure to follow the stack outlined.
 
+---
+
 # Feeding Protocol Doc
 
 ## Premise:
@@ -10,7 +12,7 @@ This project tackles the digitisation of the "Protocol for Standardised Parenter
 When preterm infants are born, the lack of nutrition influences growth and development which is essential in their care. The main problem is providing this support cot-side in the neo-natal unit (NNU). With a computer-based software application we can provide the important information clearly to the doctors and nurses so they can make the process more efficient and be able to
 help in the nutritional management of the infants in the NNU.
 
-### Stakeholders:
+### Stakeholders
 
 The following people are able to access your data and will be using the software.
 
@@ -24,12 +26,12 @@ These people will be able to view the patient's unencoded medical information re
 
 The biobank which will contain samples of the infants or mothers sample is governed by UCC and INFANT and both comply with the EU's GDPR laws. This means that the data must be pseudonymised.
 
-## Goals:
+## Goals
 
 The goal for this project is to make this version of the protocol simple as the existing form is a small piece of paper that clinicians must carry and reference.
 This new project wants to abstract some elements of the protocol and make the form more readable.
 
-## Possibilities:
+## Possibilities
 
 There is confusion on whether this application will communicate with MN-CMS via a REST API. This will not be decided on for a while but in the mean time, the basic concept of digitizing the protocol is simple and functionality for MN-CMS integration could be a factor during development.
 
@@ -37,14 +39,14 @@ There is the possibility of this being used in other hospitals also. Because of 
 
 ## Stack: (To be implemented)
 
-| Stage    | Tech stack               | Explination                                                                 |
+| Stage    | Tech stack               | Explanation                                                                 |
 | -------- | ------------------------ | --------------------------------------------------------------------------- |
-| Frontend | React TS                 | TS for type safety + React is a solid framewok                              |
+| Frontend | React TS                 | TS for type safety + React is a solid framework                             |
 | Backend  | Python                   | Simple. Possibility for AI integration for advising on MN-CMS.              |
 | Database | PostgreSQL               | Auditing, wide frameworks compatible and integrates well with FHIR servers. |
 | Hosting  | Hosting on AWS Beanstalk | Flexible and CI/CD                                                          |
 
-## Design:
+## Design
 
 This project should prioritise consistency and type safety for the data being used as this is important clinical data and inform that must be in certain forms.  
 There is an XML schema to assist with design and implementation as well as a rough prototype with some existing functionality.

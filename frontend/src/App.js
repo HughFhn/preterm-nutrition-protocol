@@ -5,42 +5,51 @@ import axios from 'axios';
 import PopUp from './PopUp';
 
 export default function App() {
-  const [form, setForm] = useState({ en_volume: "", dol: "", weight: ""});
+  const [form, setForm] = useState({
+		en_volume: "",
+		dol: "",
+		weight: "",
+		tfi: 120, // total fluid volume
+  });
   const [result, setResult] = useState(null);
   const [popUpOpen, setPopUpOpen] = useState(false);
 
   const handleFormChange = (e) => {
-    setForm({...form, [e.target.name]: e.target.value});
+		setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await axios.post('http://127.0.0.1:5000/calculate',
-        {
-          en_volume: Number(form.en_volume),
-          dol: Number(form.dol),
-          weight: parseFloat(form.weight)
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        }
-      );
-      setResult(res.data);
-    } catch (error) {
-      console.error('Error:', error);
-      if (error.response) {
-        setResult({ message: error.response.data.message || 'An error occurred' });
-      } else {
-        setResult({ message: 'Unable to connect to server' });
-      }
-    }
+		e.preventDefault();
+		try {
+			const res = await axios.post(
+				"http://127.0.0.1:5000/calculate",
+				{
+					en_volume: Number(form.en_volume),
+					dol: Number(form.dol),
+					weight: parseFloat(form.weight),
+					tfi: Number(form.tfi),
+				},
+				{
+					headers: {
+						"Content-Type": "application/json",
+					},
+				}
+			);
+			setResult(res.data);
+		} catch (error) {
+			console.error("Error:", error);
+			if (error.response) {
+				setResult({
+					message: error.response.data.message || "An error occurred",
+				});
+			} else {
+				setResult({ message: "Unable to connect to server" });
+			}
+		}
   };
 
   const handlePopUpOpen = () => {
-    setPopUpOpen(true);
+		setPopUpOpen(true);
   };
 
   return (
@@ -83,6 +92,17 @@ export default function App() {
 									value={form.weight}
 									onChange={handleFormChange}
 									placeholder="Weight (kg)"
+									required
+								/>
+							</div>
+							<div className="input-group">
+								<label>Total Fluid Intake (TFI): </label>
+								<input
+									name="tfi"
+									type="number"
+									value={form.tfi}
+									onChange={handleFormChange}
+									placeholder="Total Fluid (mL/kg/d)"
 									required
 								/>
 							</div>
@@ -149,11 +169,8 @@ export default function App() {
 											)}
 											{result.pn_phase
 												? result.target_total_weight
-												: result.target_total_weight +
-												  Number(form.en_volume) *
-														Number(
-															form.weight
-														)}{" "}
+												: Number(form.tfi) *
+												  Number(form.weight)}{" "}
 											mL/d
 										</p>
 									</>

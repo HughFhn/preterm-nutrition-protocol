@@ -16,6 +16,8 @@ class TNProtocol(ProtocolBase):
                 "aq_max": [70, 100],
                 "lipid_name": ['SMOFlipid with vits', 'SMOFlipid with vits'],
                 "lipid_target": [12, 18],
+                "lipid_min": [12, 18],
+                "lipid_max": [12, 18],
                 "total_target": [112, 153],
             },
             50: {
@@ -26,6 +28,8 @@ class TNProtocol(ProtocolBase):
                 "aq_max": [70, 95],
                 "lipid_name": ['SMOFlipid with vits', 'SMOFlipid with vits'],
                 "lipid_target": [12, 18],
+                "lipid_min": [12, 18],
+                "lipid_max": [12, 18],
                 "total_target": [117, 153],
             },
             60: {
@@ -36,6 +40,8 @@ class TNProtocol(ProtocolBase):
                 "aq_max": [65, 90],
                 "lipid_name": ['SMOFlipid with vits', 'SMOFlipid with vits'],
                 "lipid_target": [12, 12],
+                "lipid_min": [12, 12],
+                "lipid_max": [12, 12],
                 "total_target": [122, 152],
             },
             70: {
@@ -46,6 +52,8 @@ class TNProtocol(ProtocolBase):
                 "aq_max": [85],
                 "lipid_name": ['SMOFlipid with vits'],
                 "lipid_target": [12],
+                "lipid_min": [12],
+                "lipid_max": [12],
                 "total_target": [152],
             },
             80: {
@@ -56,6 +64,8 @@ class TNProtocol(ProtocolBase):
                 "aq_max": [75],
                 "lipid_name": ['SMOFlipid with vits'],
                 "lipid_target": [12],
+                "lipid_min": [12],
+                "lipid_max": [12],
                 "total_target": [152],
             },
             90: {
@@ -66,6 +76,8 @@ class TNProtocol(ProtocolBase):
                 "aq_max": [65],
                 "lipid_name": ['SMOFlipid with vits'],
                 "lipid_target": [12],
+                "lipid_min": [12],
+                "lipid_max": [12],
                 "total_target": [152],
             },
             100: {
@@ -76,6 +88,8 @@ class TNProtocol(ProtocolBase):
                 "aq_max": [55],
                 "lipid_name": ['SMOFlipid with vits'],
                 "lipid_target": [12],
+                "lipid_min": [12],
+                "lipid_max": [12],
                 "total_target": [152],
             },
             110: {
@@ -86,6 +100,8 @@ class TNProtocol(ProtocolBase):
                 "aq_max": [45],
                 "lipid_name": ['SMOFlipid with vits'],
                 "lipid_target": [12],
+                "lipid_min": [12],
+                "lipid_max": [12],
                 "total_target": [152],
             },
             120: {
@@ -96,6 +112,8 @@ class TNProtocol(ProtocolBase):
                 "aq_max": [0],
                 "lipid_name": [''],
                 "lipid_target": [0],
+                "lipid_min": [0],
+                "lipid_max": [0],
                 "total_target": [0],
             }
         }
@@ -138,17 +156,31 @@ class TNProtocol(ProtocolBase):
         return row.iloc[0]
 
     def normalize_dol(self, dol):
-        """Normalize DOL to match protocol table format"""
+        """
+        Normalize DOL to match protocol table format
+        Per PDF: EN 40-69 has DOL 2 and 3+ options
+                 EN 70+ only has "3+" or "Fortify EBM" entries
+        """
         if isinstance(dol, int):
-            if dol == 2:
-                return 2
-            elif dol >= 3:
-                return "3+"
+            # For EN ranges 40-69, distinguish between DOL 2 and 3+
+            if self.en_volume < 70:
+                if dol == 2:
+                    return 2
+                elif dol >= 3:
+                    return "3+"
+            # For EN ranges 70+, all DOLs map to "Fortify EBM" or "3+"
+            else:
+                # Check what DOL value exists in the table for this EN range
+                en_bucket = self.get_en_bucket(self.en_volume)
+                if en_bucket == 70:
+                    return "3+"  # EN 70-79 uses "3+"
+                else:
+                    return "Fortify EBM"  # EN 80+ uses "Fortify EBM"
         return dol
 
     def build_tn_table(self, block_data, en_value):
         """Build a section of the TN table for a specific EN value range"""
-        for key in ['dol', 'cspn', 'aq_target', 'aq_min', 'aq_max', 'lipid_name', 'lipid_target', 'total_target']:
+        for key in ['dol', 'cspn', 'aq_target', 'aq_min', 'aq_max', 'lipid_name', 'lipid_target', 'lipid_min', 'lipid_max', 'total_target']:
             if not isinstance(block_data[key], list):
                 block_data[key] = [block_data[key]]
 
@@ -160,6 +192,8 @@ class TNProtocol(ProtocolBase):
             ('Aqueous SPN Product', 'Max Volume'): block_data['aq_max'],
             ('Lipid SPN Product', 'Name'): block_data['lipid_name'],
             ('Lipid SPN Product', 'Target Volume'): block_data['lipid_target'],
+            ('Lipid SPN Product', 'Min Volume'): block_data['lipid_min'],
+            ('Lipid SPN Product', 'Max Volume'): block_data['lipid_max'],
             ('Patient Info', 'Total Fluid Volume (mL/kg/d)'): block_data['total_target'],
         })
 
@@ -193,21 +227,93 @@ class TNProtocol(ProtocolBase):
         return aq_target, aq_min, aq_max, lip_target, total_target
 
     def calculate_patient_spn(self, row):
-        """Calculate patient-specific SPN values (mL/d) factoring in weight"""
+        """
+        Calculate patient-specific SPN volumes based on TFI constraints
+        Following PDF protocol: Lipid priority, then aqueous with remaining fluid
+        """
+
+        # ===== Protocol constraints (mL/kg/day) =====
         aq_target = row[('Aqueous SPN Product', 'Target Volume')]
         aq_min = row[('Aqueous SPN Product', 'Min Volume')]
         aq_max = row[('Aqueous SPN Product', 'Max Volume')]
+
         lip_target = row[('Lipid SPN Product', 'Target Volume')]
+        lip_min = row[('Lipid SPN Product', 'Min Volume')]
+        lip_max = row[('Lipid SPN Product', 'Max Volume')]
 
-        aq_target_ml = aq_target * self.weight
-        aq_min_ml = aq_min * self.weight
-        aq_max_ml = aq_max * self.weight
-        
-        lip_target_ml = lip_target * self.weight
-        
-        total_target_ml = aq_target_ml + lip_target_ml
+        # ===== Patient inputs =====
+        en = self.en_volume          # mL/kg/day
+        tfi = self.tfi               # mL/kg/day
+        wt = self.weight             # kg
 
-        return aq_target_ml, aq_min_ml, aq_max_ml, lip_target_ml, total_target_ml
+        # ===== STEP 1: Available fluid for SPN =====
+        available_spn = max(0, tfi - en)
+
+        print("\n--- INPUTS ---")
+        print(f"EN: {en} mL/kg/d")
+        print(f"TFI: {tfi} mL/kg/d")
+        print(f"Available for SPN: {available_spn} mL/kg/d")
+
+        print("\n--- CONSTRAINTS ---")
+        print(f"Aqueous min / target / max: {aq_min} / {aq_target} / {aq_max}")
+        print(f"Lipid min / target / max: {lip_min} / {lip_target} / {lip_max}")
+
+        # ===== STEP 2: Allocate lipid first (per PDF priority) =====
+        # Allocate as much lipid as possible, up to target, not exceeding available
+        lipid_alloc = min(lip_target, available_spn)
+        
+        # Check if we met lipid minimum
+        if lipid_alloc < lip_min:
+            lipid_status = "Below minimum"
+        else:
+            lipid_status = "OK"
+
+        print("\n--- AFTER LIPID ALLOCATION ---")
+        print(f"Lipid allocated: {lipid_alloc} mL/kg/d ({lipid_status})")
+
+        # ===== STEP 3: Remaining fluid for aqueous =====
+        remaining = available_spn - lipid_alloc
+
+        print(f"Remaining for aqueous: {remaining} mL/kg/d")
+
+        # ===== STEP 4: Allocate aqueous with remaining fluid =====
+        # Allocate what we can, up to max
+        aqueous_alloc = min(remaining, aq_max)
+        
+        # Determine status based on protocol guidelines
+        if aqueous_alloc >= aq_target:
+            status = "Target met"
+        elif aq_min <= aqueous_alloc < aq_target:
+            status = "Between minimum and target"
+        elif aqueous_alloc < aq_min:
+            status = "Below minimum requirement"
+        else:
+            status = "OK"
+            
+        print("\n--- FINAL SPN ALLOCATION (mL/kg/day) ---")
+        print(f"Aqueous allocated: {aqueous_alloc} mL/kg/d")
+        print(f"Lipid allocated: {lipid_alloc} mL/kg/d")
+        print(f"Status: {status}")
+
+        # ===== STEP 5: Convert to patient volumes (mL/day) =====
+        aqueous_ml = aqueous_alloc * wt
+        lipid_ml = lipid_alloc * wt
+        total_spn_ml = aqueous_ml + lipid_ml
+
+        print("\n--- PATIENT VOLUMES (mL/day) ---")
+        print(f"Aqueous: {aqueous_ml:.2f} mL/day")
+        print(f"Lipid: {lipid_ml:.2f} mL/day")
+        print(f"Total SPN: {total_spn_ml:.2f} mL/day")
+        print(f"Weight: {wt} kg")
+
+        return {
+            "aqueous_per_kg": aqueous_alloc,
+            "lipid_per_kg": lipid_alloc,
+            "aqueous_ml_day": aqueous_ml,
+            "lipid_ml_day": lipid_ml,
+            "total_spn_ml": total_spn_ml,
+            "status": status
+        }
 
     def display_results(self):
         """Display the calculation results"""
@@ -220,24 +326,25 @@ class TNProtocol(ProtocolBase):
         print('\n')
 
         aq_target, aq_min, aq_max, lip_target, total_target = self.calculate_protocol_spn(tnRow)
-        aq_target_ml, aq_min_ml, aq_max_ml, lip_target_ml, total_target_ml = self.calculate_patient_spn(tnRow)
+        patient = self.calculate_patient_spn(tnRow)
 
-        print("Protocol Targets (NOT weight factored):")
-        print('=' * 80)
-        print(f"User Inputs -> EN Volume: {self.en_volume}, DOL: {self.dol}, Weight: {self.weight}, SPN Type: {self.selected_cSPN.value}\n")
-        print(f"Aqueous SPN Target (mL/kg/day): {aq_target} (min: {aq_min}, max: {aq_max})")
-        print(f"Lipid SPN Target (mL/kg/day):   {lip_target}")
-        print(f"Total Fluid Volume (mL/kg/day): {total_target}")
-        print('=' * 80)
-        print('\n')
+        print("\n" + "="*80)
+        print("PROTOCOL TARGETS (mL/kg/day)")
+        print("="*80)
+        print(f"Inputs: EN={self.en_volume}, TFI={self.tfi}, DOL={self.dol}, Weight={self.weight}kg, cSPN={self.selected_cSPN.value}")
+        print(f"\nAqueous Target: {aq_target} (min: {aq_min}, max: {aq_max})")
+        print(f"Lipid Target: {lip_target}")
+        print(f"Total Fluid Target: {total_target}")
+        print("="*80)
 
-        print("Patient-Specific Targets (weight factored):")
-        print('=' * 80)
-        print(f"User Inputs -> EN Volume: {self.en_volume}, DOL: {self.dol}, Weight: {self.weight}, SPN Type: {self.selected_cSPN.value}\n")
-        print(f"Aqueous SPN Target (mL/day): {aq_target_ml:.2f} (min: {aq_min_ml:.2f}, max: {aq_max_ml:.2f})")
-        print(f"Lipid SPN Target (mL/day):   {lip_target_ml:.2f}")
-        print(f"Total SPN Volume (mL/day):   {total_target_ml:.2f}")
-        print('=' * 80)
+        print("\n" + "="*80)
+        print("PATIENT-SPECIFIC VOLUMES")
+        print("="*80)
+        print(f"Aqueous: {patient['aqueous_per_kg']:.2f} mL/kg/d  →  {patient['aqueous_ml_day']:.2f} mL/day")
+        print(f"Lipid:   {patient['lipid_per_kg']:.2f} mL/kg/d  →  {patient['lipid_ml_day']:.2f} mL/day")
+        print(f"Total:   {patient['aqueous_per_kg'] + patient['lipid_per_kg']:.2f} mL/kg/d  →  {patient['total_spn_ml']:.2f} mL/day")
+        print(f"\nStatus: {patient['status']}")
+        print("="*80)
         print('\n')
 
 if __name__ == '__main__':
