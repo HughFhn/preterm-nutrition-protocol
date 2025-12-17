@@ -13,28 +13,20 @@
   }
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.header {
+  width: 100%;
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  align-items: center;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.08);
 }
 
 .App-link {
   color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .warning-text{
@@ -45,8 +37,8 @@
 .calculator-container {
   display: flex;
   justify-content: center;
-  align-items: flex-start; 
-  min-height: 100vh; 
+  align-items: flex-start;
+  min-height: 100vh;
   padding: 2rem 1rem;
   background: linear-gradient(to right, #6793f1, #8dc28f);
 }
@@ -62,14 +54,20 @@
   border-radius: 10px;
   box-shadow: 0 14px 28px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.05);
   padding: 2rem;
-  width: 100%;
-  display: table-cell;
 }
 
-input-group {
+.element-container {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+
+.input-group {
   margin-bottom: 1.5rem;
 }
-
 
 .input-group label {
   display: block;
@@ -123,17 +121,19 @@ input-group {
   transform: scale(0.98);
 }
 
-.weight_paragraph {
+h3 {
+  background-color: #c50000;
+  content: '';
+  display: inline-flex;
+  height: 3px;
+  width: 75px;
+  margin: 2em;
+}
+
+h4 {
   margin-top: 10px;
   font-size: 1.2rem;
   color: #0004ff;
-}
-
-.header {
-  position: sticky;
-  top: 0;
-  padding: 10px 16px;
-  background:  #ffffff;
 }
 
 .popup-list {

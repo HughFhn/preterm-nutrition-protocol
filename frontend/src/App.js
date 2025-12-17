@@ -60,11 +60,11 @@ export default function App() {
 
 	return (
 		<div className="App">
-			<div className="header">
-				<h2>SPN Calculator</h2>
-			</div>
 			<div className="calculator-container">
-				<div className="form-wrapper">
+				<div className="element-container">
+					<div className="header">
+						<h2>SPN Calculator</h2>
+					</div>
 					<div className="calculator-card">
 						<form onSubmit={handleSubmit}>
 							<div className="input-group">
@@ -112,66 +112,91 @@ export default function App() {
 						{result && (
 							<div className="results">
 								{"message" in result ? (
-									<h3>{result.message}</h3>
+									<div className="result-error">
+										{result.message}
+									</div>
 								) : (
 									<>
-										<p>
-											<strong>CSPN Type:</strong>{" "}
-											{result.cspn_type}
-										</p>
-										<p>
-											<strong>Aqueous Volume: </strong>{" "}
-											{result.target_aq} mL/kg/d (min:{" "}
-											{result.min_aq}, max:{" "}
-											{result.max_aq})
-										</p>
-										<p>
-											<strong>Lipid Volume: </strong>
-											{result.target_lip} mL/kg/d
-										</p>
-										<p>
-											{result.pn_phase ? (
+										<div className="result-section">
+											<h3>Summary</h3>
+											<div className="result-row">
+												<span>CSPN Type: </span>
 												<strong>
-													Total SPN Volume:{" "}
+													{result.cspn_type}
 												</strong>
-											) : (
+											</div>
+										</div>
+
+										<div className="result-section">
+											<h4>Volumes (mL/kg/day)</h4>
+
+											<div className="result-row">
+												<span>Aqueous: </span>
 												<strong>
-													Total Fluid Volume:{" "}
+													{result.target_aq}
+													<span className="muted">
+														{" "}
+														({result.min_aq}–
+														{result.max_aq})
+													</span>
 												</strong>
-											)}
-											{result.target_total} mL/kg/d
-										</p>
-										<p className="weight_paragraph">
-											<strong>
-												Aqueous Volume for patient
-												weight:{" "}
-											</strong>
-											{result.target_aq_weight} mL/d
-										</p>
-										<p className="weight_paragraph">
-											<strong>
-												Lipid Volume for patient weight:{" "}
-											</strong>
-											{result.target_lip_weight} mL/d
-										</p>
-										<p className="weight_paragraph">
-											{result.pn_phase ? (
+											</div>
+
+											<div className="result-row">
+												<span>Lipid: </span>
 												<strong>
-													Total SPN Volume for patient
-													weight:{" "}
+													{result.target_lip}
 												</strong>
-											) : (
+											</div>
+
+											<div className="result-row highlight">
+												<span>
+													{result.pn_phase
+														? "Total SPN: "
+														: "Total Fluid: "}
+												</span>
 												<strong>
-													Total Fluid Volume for
-													patient weight:{" "}
+													{result.target_total}
 												</strong>
-											)}
-											{result.pn_phase
-												? result.target_total_weight
-												: Number(form.tfi) *
-												  Number(form.weight)}{" "}
-											mL/d
-										</p>
+											</div>
+										</div>
+
+										<div className="result-section">
+											<h4>Volumes (Weight applied)</h4>
+
+											<div className="result-row">
+												<span>Aqueous: </span>
+												<strong>
+													{result.target_aq_weight}{" "}
+													mL/d
+												</strong>
+											</div>
+
+											<div className="result-row">
+												<span>Lipid: </span>
+												<strong>
+													{result.target_lip_weight}{" "}
+													mL/d
+												</strong>
+											</div>
+
+											<div className="result-row highlight">
+												<span>
+													{result.pn_phase
+														? "Total SPN: "
+														: "Total Fluid: "}
+												</span>
+												<strong>
+													{result.pn_phase
+														? result.target_total_weight
+														: Number(form.tfi) *
+														  Number(
+																form.weight
+														  )}{" "}
+													mL/d
+												</strong>
+											</div>
+										</div>
 									</>
 								)}
 							</div>
