@@ -1,28 +1,33 @@
-import logo from './logo.svg';
-import './App.css';
-import { useState } from 'react';
-import axios from 'axios';
-import PopUp from './PopUp';
+import "./App.css";
+import { useState } from "react";
+import axios from "axios";
+import PopUp from "./PopUp";
+
+// Use relative path since backend and frontend are on same domain
+const API_URL =
+	process.env.NODE_ENV === "production" ? "/api" : "http://127.0.0.1:5000";
 
 export default function App() {
-  const [form, setForm] = useState({
+	const [form, setForm] = useState({
 		en_volume: "",
 		dol: "",
 		weight: "",
-		tfi: 120, // total fluid volume
-  });
-  const [result, setResult] = useState(null);
-  const [popUpOpen, setPopUpOpen] = useState(false);
+		tfi: 120,
+	});
+	const [result, setResult] = useState(null);
+	const [popUpOpen, setPopUpOpen] = useState(false);
+	const [loading, setLoading] = useState(false);
 
-  const handleFormChange = (e) => {
+	const handleFormChange = (e) => {
 		setForm({ ...form, [e.target.name]: e.target.value });
-  };
+	};
 
-  const handleSubmit = async (e) => {
+	const handleSubmit = async (e) => {
 		e.preventDefault();
+		setLoading(true);
 		try {
 			const res = await axios.post(
-				"http://127.0.0.1:5000/calculate",
+				`${API_URL}/calculate`,
 				{
 					en_volume: Number(form.en_volume),
 					dol: Number(form.dol),
@@ -44,14 +49,16 @@ export default function App() {
 			} else {
 				setResult({ message: "Unable to connect to server" });
 			}
+		} finally {
+			setLoading(false);
 		}
-  };
+	};
 
-  const handlePopUpOpen = () => {
+	const handlePopUpOpen = () => {
 		setPopUpOpen(true);
-  };
+	};
 
-  return (
+	return (
 		<div className="App">
 			<div className="header">
 				<h2>SPN Calculator</h2>
@@ -94,8 +101,12 @@ export default function App() {
 									required
 								/>
 							</div>
-							<button type="submit" className="calculate-button">
-								Calculate
+							<button
+								type="submit"
+								className="calculate-button"
+								disabled={loading}
+							>
+								{loading ? "Calculating..." : "Calculate"}
 							</button>
 						</form>
 						{result && (
@@ -202,5 +213,5 @@ export default function App() {
 				option1={"Cancel"}
 			/>
 		</div>
-  );
-};
+	);
+}

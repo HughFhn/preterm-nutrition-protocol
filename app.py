@@ -1,13 +1,16 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from backend.pn_protocol import PNProtocol
 from backend.tn_protocol import TNProtocol
 from backend.enumClass import AqueousSPN
+import os
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='frontend/build', static_url_path='')
+
+# Enable CORS for all routes
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-@app.route('/calculate', methods=['POST'])
+@app.route('/api/calculate', methods=['POST'])
 def calculate():
     try:
         # Ensure we're getting JSON
@@ -18,7 +21,7 @@ def calculate():
         en_volume = data.get('en_volume')
         dol = data.get('dol')
         weight = data.get('weight')
-        tfi = data.get('tfi', 120)  # Default to 120 if not provided
+        tfi = data.get('tfi', 120)
         
         # Validate inputs
         if en_volume is None or dol is None or weight is None:
@@ -39,11 +42,7 @@ def calculate():
         if en_volume >= 120:
             return jsonify({'message': 'Stop SPN unless clinically indicated'}), 200
         
-        # CRITICAL FIX: Determine phase based on EN AND DOL
-        # Per PDF protocol:
-        # - PN Phase: EN < 40 (any DOL) OR (EN >= 40 AND DOL == 1)
-        # - TN Phase: EN >= 40 AND DOL >= 2
-        
+        # Determine phase based on EN AND DOL
         if en_volume < 40:
             # PN Phase: EN < 40 mL/kg/d
             protocol = PNProtocol()
@@ -115,10 +114,20 @@ def calculate():
         traceback.print_exc()
         return jsonify({'message': f'An error occurred: {str(e)}'}), 500
 
-@app.route('/health', methods=['GET'])
+@app.route('/api/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
     return jsonify({'status': 'healthy', 'service': 'SPN Calculator'}), 200
 
+# Serve React App
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    if path != "" and os.path.exists(app.static_folder + '/' + path):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, 'index.html')
+
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
