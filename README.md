@@ -48,5 +48,5 @@ There is the possibility of this being used in other hospitals also. Because of 
 
 ## Design
 
-This project should prioritise consistency and type safety for the data being used as this is important clinical data and inform that must be in certain forms.  
+This project should prioritize consistency and type safety for the data being used as this is important clinical data and inform that must be in certain forms.  
 There is an XML schema to assist with design and implementation as well as a rough prototype with some existing functionality.
