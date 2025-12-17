@@ -1,5 +1,6 @@
 import pandas as pd
 from backend.enumClass import AqueousSPN
+from backend.statusClass import SPNStatus
 from backend.base import ProtocolBase
 
 class PNProtocol(ProtocolBase):
@@ -66,8 +67,7 @@ class PNProtocol(ProtocolBase):
     
     def calculate_patient_spn(self, row):
         """
-        Calculate patient-specific SPN volumes based on TFI constraints
-        Following PDF protocol: Lipid priority, then aqueous with remaining fluid
+        Calculate patient-specific SPN volumes based on protocol targets.
         """
 
         # ===== Protocol constraints (mL/kg/day) =====
@@ -81,68 +81,61 @@ class PNProtocol(ProtocolBase):
 
         # ===== Patient inputs =====
         en = self.en_volume          # mL/kg/day
-        tfi = self.tfi               # mL/kg/day
         wt = self.weight             # kg
 
-        # ===== STEP 1: Available fluid for SPN =====
-        available_spn = max(0, tfi - en)
+        # ===== STEP 1: Available resources =====
 
         print("\n--- INPUTS ---")
         print(f"EN: {en} mL/kg/d")
-        print(f"TFI: {tfi} mL/kg/d")
-        print(f"Available for SPN: {available_spn} mL/kg/d")
+        print(f"Patient Weight: {wt} kg")
 
         print("\n--- CONSTRAINTS ---")
         print(f"Aqueous min / target / max: {aq_min} / {aq_target} / {aq_max}")
         print(f"Lipid min / target / max: {lip_min} / {lip_target} / {lip_max}")
 
-        # ===== STEP 2: Allocate lipid first (per PDF priority) =====
-        # Allocate as much lipid as possible, up to target, not exceeding available
-        lipid_alloc = min(lip_target, available_spn)
+        # ===== STEP 2: Allocate lipid first (priority) =====
+        lipid_alloc = lip_target
         
         # Check if we met lipid minimum
+        lipid_status = SPNStatus.TARGET_MET
         if lipid_alloc < lip_min:
-            lipid_status = "Below minimum"
-        else:
-            lipid_status = "OK"
+            lipid_status = SPNStatus.BELOW_MINIMUM
+        elif lipid_alloc < lip_target:
+            lipid_status = SPNStatus.PARTIAL
 
-        print("\n--- AFTER LIPID ALLOCATION ---")
-        print(f"Lipid allocated: {lipid_alloc} mL/kg/d ({lipid_status})")
+        # ===== STEP 3: Allocate aqueous =====
+        aqueous_alloc = aq_target
+        aqueous_status = SPNStatus.TARGET_MET
+        if aqueous_alloc < aq_min:
+            aqueous_status = SPNStatus.BELOW_MINIMUM
+        elif aqueous_alloc < aq_target:
+            aqueous_status = SPNStatus.PARTIAL
 
-        # ===== STEP 3: Remaining fluid for aqueous =====
-        remaining = available_spn - lipid_alloc
-
-        print(f"Remaining for aqueous: {remaining} mL/kg/d")
-
-        # ===== STEP 4: Allocate aqueous with remaining fluid =====
-        # Allocate what we can, up to max
-        aqueous_alloc = min(remaining, aq_max)
-        
-        # Determine status based on protocol guidelines
-        if aqueous_alloc >= aq_target:
-            status = "Target met"
-        elif aq_min <= aqueous_alloc < aq_target:
-            status = "Between minimum and target"
-        elif aqueous_alloc < aq_min:
-            status = "Below minimum requirement"
-        else:
-            status = "OK"
-            
-        print("\n--- FINAL SPN ALLOCATION (mL/kg/day) ---")
-        print(f"Aqueous allocated: {aqueous_alloc} mL/kg/d")
-        print(f"Lipid allocated: {lipid_alloc} mL/kg/d")
-        print(f"Status: {status}")
-
-        # ===== STEP 5: Convert to patient volumes (mL/day) =====
+        # ===== STEP 4: Calculate total SPN and TFI =====
+        total_spn_per_kg = aqueous_alloc + lipid_alloc
+        total_spn_ml = total_spn_per_kg * wt
         aqueous_ml = aqueous_alloc * wt
         lipid_ml = lipid_alloc * wt
-        total_spn_ml = aqueous_ml + lipid_ml
+        total_tfi = total_spn_per_kg + en
+
+        print("\n--- FINAL SPN ALLOCATION (mL/kg/day) ---")
+        print(f"Aqueous allocated: {aqueous_alloc} mL/kg/d ({aqueous_status})")
+        print(f"Lipid allocated: {lipid_alloc} mL/kg/d ({lipid_status})")
+        print(f"Total SPN per kg: {total_spn_per_kg} mL/kg/d")
+        print(f"Total TFI per kg (EN + SPN): {total_tfi} mL/kg/d")
 
         print("\n--- PATIENT VOLUMES (mL/day) ---")
         print(f"Aqueous: {aqueous_ml:.2f} mL/day")
         print(f"Lipid: {lipid_ml:.2f} mL/day")
         print(f"Total SPN: {total_spn_ml:.2f} mL/day")
-        print(f"Weight: {wt} kg")
+
+        # Combine statuses into a single overall status
+        if lipid_status == SPNStatus.BELOW_MINIMUM or aqueous_status == SPNStatus.BELOW_MINIMUM:
+            overall_status = SPNStatus.BELOW_MINIMUM
+        elif lipid_status == SPNStatus.PARTIAL or aqueous_status == SPNStatus.PARTIAL:
+            overall_status = SPNStatus.PARTIAL
+        else:
+            overall_status = SPNStatus.TARGET_MET
 
         return {
             "aqueous_per_kg": aqueous_alloc,
@@ -150,7 +143,10 @@ class PNProtocol(ProtocolBase):
             "aqueous_ml_day": aqueous_ml,
             "lipid_ml_day": lipid_ml,
             "total_spn_ml": total_spn_ml,
-            "status": status
+            "total_tfi_per_kg": total_spn_per_kg + en, 
+            "lipid_status": str(lipid_status),
+            "aqueous_status": str(aqueous_status),
+            "status": str(overall_status)
         }
 
     def display_results(self):

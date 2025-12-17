@@ -27,7 +27,6 @@ export default function App() {
 					en_volume: Number(form.en_volume),
 					dol: Number(form.dol),
 					weight: parseFloat(form.weight),
-					tfi: Number(form.tfi),
 				},
 				{
 					headers: {
@@ -92,17 +91,6 @@ export default function App() {
 									value={form.weight}
 									onChange={handleFormChange}
 									placeholder="Weight (kg)"
-									required
-								/>
-							</div>
-							<div className="input-group">
-								<label>Total Fluid Intake (TFI): </label>
-								<input
-									name="tfi"
-									type="number"
-									value={form.tfi}
-									onChange={handleFormChange}
-									placeholder="Total Fluid (mL/kg/d)"
 									required
 								/>
 							</div>
